@@ -1,0 +1,27 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Reporte de Ventas</h1>
+<form method="post">
+    <label>Fecha inicio:</label>
+    <input type="date" name="inicio" required>
+    <label>Fecha fin:</label>
+    <input type="date" name="fin" required>
+    <input type="submit" value="Consultar">
+</form>
+
+{% if ventas %}
+    <h2>Resultados:</h2>
+    <table>
+        <tr>
+            <th>ID</th><th>Producto</th><th>Cantidad</th><th>Total</th><th>Fecha</th>
+        </tr>
+        {% for v in ventas %}
+        <tr>
+            <td>{{ v[0] }}</td><td>{{ v[1] }}</td><td>{{ v[2] }}</td><td>{{ v[3] }}</td><td>{{ v[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% elif request.method == 'POST' %}
+    <p>No se encontraron ventas en ese rango de fechas.</p>
+{% endif %}
+{% endblock %}
