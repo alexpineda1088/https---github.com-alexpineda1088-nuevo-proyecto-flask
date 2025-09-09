@@ -1,52 +1,12 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-<!-- Fondo de supermercado -->
-<style>
-    body {
-        background: url('{{ url_for("static", filename="img/supermercado.jpg") }}') no-repeat center center fixed;
-        background-size: cover;
-        color: #682222;
-    }
-    .menu-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 80vh;
-        text-align: center;
-        background-color: rgba(0,0,0,0.6);
-        padding: 50px;
-        border-radius: 15px;
-    }
-    .menu-container h1 {
-        font-size: 3rem;
-        margin-bottom: 30px;
-    }
-    .menu-container a.btn {
-        margin: 10px;
-        width: 250px;
-        font-size: 1.2rem;
-        padding: 15px;
-    }
-</style>
-
-<div class="container">
-    <div class="menu-container">
-        <h1>Bienvenido al Sistema de Ventas</h1>
-        <p>Gestiona productos y consulta reportes de ventas fácilmente.</p>
-
-        <!-- Botones -->
-        <a href="/agregar" class="btn btn-warning">Agregar Producto</a>
-        <a href="/reporte" class="btn btn-info">Reporte de Ventas</a>
-        <a href="/about" class="btn btn-success">About</a>
-    </div>
+<div class="text-center mt-5 p-5 bg-light rounded shadow">
+    <h1 class="mb-4">Bienvenido al Sistema de Ventas</h1>
+    <p class="mb-4">Gestiona productos y consulta reportes de ventas fácilmente.</p>
+    <a href="{{ url_for('agregar') }}" class="btn btn-warning m-2">Agregar Producto</a>
+    <a href="{{ url_for('productos') }}" class="btn btn-primary m-2">Productos</a>
+    <a href="{{ url_for('inventario') }}" class="btn btn-success m-2">Inventario</a>
+    <a href="{{ url_for('reporte') }}" class="btn btn-info m-2">Reporte de Ventas</a>
 </div>
-
-<!-- Mensaje en consola para verificar que cargó -->
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log("Sistema del supermercado cargado correctamente");
-    });
-</script>
 {% endblock %}

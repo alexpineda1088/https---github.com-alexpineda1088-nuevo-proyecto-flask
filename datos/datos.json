@@ -1,0 +1,52 @@
+[
+    {
+        "nombre": "gomitas",
+        "cantidad": 2,
+        "precio": 0.25
+    },
+    {
+        "nombre": "Galletas",
+        "cantidad": 5,
+        "precio": 0.4
+    },
+    {
+        "nombre": "atun",
+        "cantidad": 8,
+        "precio": 1.04
+    },
+    {
+        "nombre": "atun",
+        "cantidad": 8,
+        "precio": 1.04
+    },
+    {
+        "nombre": "Galletas oreo grande",
+        "cantidad": 2,
+        "precio": 0.31
+    },
+    {
+        "nombre": "Galletaschocolates",
+        "cantidad": 4,
+        "precio": 0.2
+    },
+    {
+        "nombre": "Coca Cola 1L",
+        "cantidad": 12,
+        "precio": 1.1
+    },
+    {
+        "nombre": "BON BON",
+        "cantidad": 15,
+        "precio": 0.2
+    },
+    {
+        "nombre": "arroz",
+        "cantidad": 35,
+        "precio": 40.0
+    },
+    {
+        "nombre": "sardina",
+        "cantidad": 50,
+        "precio": 0.99
+    }
+]

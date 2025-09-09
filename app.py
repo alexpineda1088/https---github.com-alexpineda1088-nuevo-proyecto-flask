@@ -1,36 +1,46 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import sqlite3
+import os
+import json
+import csv
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"  # Necesario para usar flash
+app.secret_key = "supersecretkey"
 
-# Función para inicializar la base de datos y crear tablas si no existen
+# Archivos de datos
+TXT_FILE = "datos/datos.txt"
+JSON_FILE = "datos/datos.json"
+CSV_FILE = "datos/datos.csv"
+
+# ------------------------------
+# Inicializar Base de Datos
+# ------------------------------
 def inicializar_db():
     conn = sqlite3.connect('ventas.db')
     cursor = conn.cursor()
-    
-    # Crear tabla productos
+
+    # Tabla productos
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS productos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        cantidad INTEGER NOT NULL,
-        precio REAL NOT NULL
-    )
-    """)
-    
-    # Crear tabla ventas
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS ventas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        producto TEXT NOT NULL,
-        cantidad INTEGER NOT NULL,
-        total REAL NOT NULL,
-        fecha TEXT NOT NULL
-    )
+        CREATE TABLE IF NOT EXISTS productos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            cantidad INTEGER NOT NULL,
+            precio REAL NOT NULL
+        )
     """)
 
-    # Insertar 20 productos si la tabla está vacía
+    # Tabla ventas
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ventas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            producto TEXT NOT NULL,
+            cantidad INTEGER NOT NULL,
+            total REAL NOT NULL,
+            fecha TEXT NOT NULL
+        )
+    """)
+
+    # Insertar productos iniciales si la tabla está vacía
     cursor.execute("SELECT COUNT(*) FROM productos")
     if cursor.fetchone()[0] == 0:
         productos = [
@@ -43,14 +53,59 @@ def inicializar_db():
             ('Pescado', 20, 7.00), ('Café', 50, 3.00)
         ]
         cursor.executemany("INSERT INTO productos (nombre, cantidad, precio) VALUES (?, ?, ?)", productos)
-    
+
     conn.commit()
     conn.close()
 
-# Llamar a la función al iniciar la app
-inicializar_db()
+# ------------------------------
+# Inicializar Archivos TXT, JSON, CSV
+# ------------------------------
+def inicializar_archivos():
+    os.makedirs("datos", exist_ok=True)
+    conn = sqlite3.connect('ventas.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT nombre, cantidad, precio FROM productos")
+    productos = [{"nombre": p[0], "cantidad": p[1], "precio": p[2]} for p in cursor.fetchall()]
+    conn.close()
 
-# Función para obtener ventas entre fechas
+    # TXT
+    with open(TXT_FILE, "w", encoding="utf-8") as f:
+        for p in productos:
+            f.write(f"{p['nombre']},{p['precio']},{p['cantidad']}\n")
+
+    # JSON
+    with open(JSON_FILE, "w", encoding="utf-8") as f:
+        json.dump(productos, f, indent=4, ensure_ascii=False)
+
+    # CSV
+    with open(CSV_FILE, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["nombre", "precio", "cantidad"])
+        for p in productos:
+            writer.writerow([p["nombre"], p["precio"], p["cantidad"]])
+
+# ------------------------------
+# Funciones auxiliares
+# ------------------------------
+def sincronizar_archivos(nombre, precio, cantidad):
+    # TXT
+    with open(TXT_FILE, "a", encoding="utf-8") as f:
+        f.write(f"{nombre},{precio},{cantidad}\n")
+
+    # JSON
+    productos_json = []
+    if os.path.exists(JSON_FILE):
+        with open(JSON_FILE, "r", encoding="utf-8") as f:
+            productos_json = json.load(f)
+    productos_json.append({"nombre": nombre, "precio": float(precio), "cantidad": int(cantidad)})
+    with open(JSON_FILE, "w", encoding="utf-8") as f:
+        json.dump(productos_json, f, indent=4, ensure_ascii=False)
+
+    # CSV
+    with open(CSV_FILE, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow([nombre, precio, cantidad])
+
 def obtener_ventas(inicio, fin):
     conn = sqlite3.connect('ventas.db')
     cursor = conn.cursor()
@@ -64,17 +119,17 @@ def obtener_ventas(inicio, fin):
     conn.close()
     return ventas
 
-# Página de inicio
+# ------------------------------
+# Rutas principales
+# ------------------------------
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Página About
-@app.route("/about")
+@app.route('/about')
 def about():
-    return render_template("about.html")
+    return render_template('about.html')
 
-# Página de reporte de ventas
 @app.route('/reporte', methods=['GET', 'POST'])
 def reporte():
     ventas = []
@@ -84,61 +139,136 @@ def reporte():
         ventas = obtener_ventas(inicio, fin)
     return render_template('reporte.html', ventas=ventas)
 
-# Página para agregar un producto
 @app.route('/agregar', methods=['GET', 'POST'])
 def agregar():
     if request.method == 'POST':
         nombre = request.form.get('nombre')
         cantidad = request.form.get('cantidad')
         precio = request.form.get('precio')
-
         if nombre and cantidad and precio:
+            # Guardar en DB
             conn = sqlite3.connect('ventas.db')
             cursor = conn.cursor()
-            cursor.execute(
-                "INSERT INTO productos (nombre, cantidad, precio) VALUES (?, ?, ?)",
-                (nombre, cantidad, precio)
-            )
+            cursor.execute("INSERT INTO productos (nombre, cantidad, precio) VALUES (?, ?, ?)",
+                           (nombre, cantidad, precio))
             conn.commit()
             conn.close()
-
+            # Sincronizar en archivos
+            sincronizar_archivos(nombre, precio, cantidad)
             flash("Producto agregado correctamente", "success")
             return redirect(url_for('productos'))
         else:
             flash("Todos los campos son obligatorios", "danger")
             return redirect(url_for('agregar'))
-
     return render_template('agregar.html')
 
-# Página para ver todos los productos
 @app.route('/productos')
 def productos():
     conn = sqlite3.connect('ventas.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM productos")
-    productos = cursor.fetchall()
+    cursor.execute("SELECT id, nombre, cantidad, precio FROM productos")
+    productos_db = cursor.fetchall()
     conn.close()
-    return render_template('productos.html', productos=productos)
+    return render_template('productos.html', productos_db=productos_db)
 
-# Página para ver ventas
 @app.route('/ventas')
 def ver_ventas():
     conn = sqlite3.connect('ventas.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM ventas")  # Trae todas las ventas
+    cursor.execute("SELECT * FROM ventas")
     ventas = cursor.fetchall()
     conn.close()
     return render_template('ventas.html', ventas=ventas)
 
-# Página de inventario
 @app.route('/inventario')
 def inventario():
+    # Productos desde DB
     conn = sqlite3.connect('ventas.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM productos")
-    productos = cursor.fetchall()
+    cursor.execute("SELECT id, nombre, cantidad, precio FROM productos")
+    productos_db = cursor.fetchall()
     conn.close()
-    return render_template('inventario.html', productos=productos)
+
+    # Productos desde archivos
+    productos_txt, productos_json_file, productos_csv_file = [], [], []
+
+    if os.path.exists(TXT_FILE):
+        with open(TXT_FILE, "r", encoding="utf-8") as f:
+            for linea in f:
+                nombre, precio, cantidad = linea.strip().split(',')
+                productos_txt.append({"nombre": nombre, "precio": float(precio), "cantidad": int(cantidad)})
+
+    if os.path.exists(JSON_FILE):
+        with open(JSON_FILE, "r", encoding="utf-8") as f:
+            productos_json_file = json.load(f)
+
+    if os.path.exists(CSV_FILE):
+        with open(CSV_FILE, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                productos_csv_file.append({"nombre": row["nombre"], "precio": float(row["precio"]), "cantidad": int(row["cantidad"])})
+
+    return render_template("inventario.html",
+                           productos_db=productos_db,
+                           productos_txt=productos_txt,
+                           productos_json=productos_json_file,
+                           productos_csv=productos_csv_file)
+
+# ------------------------------
+# Endpoints API para Archivos
+# ------------------------------
+@app.route('/api/productos/txt')
+def api_productos_txt():
+    productos = []
+    if os.path.exists(TXT_FILE):
+        with open(TXT_FILE, "r", encoding="utf-8") as f:
+            for linea in f:
+                nombre, precio, cantidad = linea.strip().split(',')
+                productos.append({"nombre": nombre, "precio": float(precio), "cantidad": int(cantidad)})
+    return jsonify(productos)
+
+@app.route('/api/productos/json')
+def api_productos_json():
+    productos = []
+    if os.path.exists(JSON_FILE):
+        with open(JSON_FILE, "r", encoding="utf-8") as f:
+            productos = json.load(f)
+    return jsonify(productos)
+
+@app.route('/api/productos/csv')
+def api_productos_csv():
+    productos = []
+    if os.path.exists(CSV_FILE):
+        with open(CSV_FILE, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                productos.append({"nombre": row["nombre"], "precio": float(row["precio"]), "cantidad": int(row["cantidad"])})
+    return jsonify(productos)
+@app.route('/inventario_moderno')
+def inventario_moderno():
+    conn = sqlite3.connect('ventas.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, nombre, cantidad, precio FROM productos")
+    productos_db = cursor.fetchall()
+    conn.close()
+
+    # Archivos TXT, JSON, CSV
+    productos_txt = []
+    productos_json = []
+    productos_csv = []
+    # ... carga los archivos como en tu código actual
+
+    return render_template("inventario_datatables.html",
+                           productos_db=productos_db,
+                           productos_txt=productos_txt,
+                           productos_json=productos_json,
+                           productos_csv=productos_csv)
+
+# ------------------------------
+# Inicialización
+# ------------------------------
+inicializar_db()
+inicializar_archivos()
 
 if __name__ == '__main__':
     app.run(debug=True)
