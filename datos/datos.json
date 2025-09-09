@@ -1,52 +1,27 @@
 [
     {
-        "nombre": "gomitas",
-        "cantidad": 2,
-        "precio": 0.25
+        "nombre": "Arroz",
+        "precio": 1.20,
+        "cantidad": 50
     },
     {
-        "nombre": "Galletas",
-        "cantidad": 5,
-        "precio": 0.4
+        "nombre": "Leche",
+        "precio": 0.90,
+        "cantidad": 30
     },
     {
-        "nombre": "atun",
-        "cantidad": 8,
-        "precio": 1.04
+        "nombre": "Huevos",
+        "precio": 3.50,
+        "cantidad": 12
     },
     {
-        "nombre": "atun",
-        "cantidad": 8,
-        "precio": 1.04
+        "nombre": "Pan",
+        "precio": 0.20,
+        "cantidad": 100
     },
     {
-        "nombre": "Galletas oreo grande",
-        "cantidad": 2,
-        "precio": 0.31
-    },
-    {
-        "nombre": "Galletaschocolates",
-        "cantidad": 4,
-        "precio": 0.2
-    },
-    {
-        "nombre": "Coca Cola 1L",
-        "cantidad": 12,
-        "precio": 1.1
-    },
-    {
-        "nombre": "BON BON",
-        "cantidad": 15,
-        "precio": 0.2
-    },
-    {
-        "nombre": "arroz",
-        "cantidad": 35,
-        "precio": 40.0
-    },
-    {
-        "nombre": "sardina",
-        "cantidad": 50,
-        "precio": 0.99
+        "nombre": "Manzanas",
+        "precio": 1.80,
+        "cantidad": 25
     }
 ]

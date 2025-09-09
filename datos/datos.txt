@@ -1,10 +1,5 @@
-gomitas,0.25,2
-Galletas,0.4,5
-atun,1.04,8
-atun,1.04,8
-Galletas oreo grande,0.31,2
-Galletaschocolates,0.2,4
-Coca Cola 1L,1.1,12
-BON BON,0.2,15
-arroz,40.0,35
-sardina,0.99,50
+Arroz,1.20,50
+Leche,0.90,30
+Huevos,3.50,12
+Pan,0.20,100
+Manzanas,1.80,25
